@@ -1,5 +1,14 @@
 version: 2.1
-
+executors:
+  node:
+    docker:
+      - image: circleci/node:13.8.0
+  python:
+    docker:
+      - image: python:3.9.0-alpine
+  aws:
+    docker:
+      - image: amazon/aws-cli
 # commands:
 #   destroy-environment:
 #     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
@@ -33,7 +42,6 @@ version: 2.1
 #             fi
             
 jobs:
-
   install-backend-dependencies:
     executor: node
     steps:
