@@ -83,7 +83,7 @@ jobs:
             cd frontend
             ls -la && npm install
       - run:
-          # name: Build front-end
+          name: Build front-end
           command: |
             cd frontend
             npm run build
