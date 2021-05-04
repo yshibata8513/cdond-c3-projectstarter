@@ -49,8 +49,8 @@ jobs:
 
 
   install-frontend-dependencies:
-   executor: node
-   steps:
+    executor: node
+    steps:
       - checkout
       - run:
           name: npm install
