@@ -69,10 +69,6 @@ jobs:
       - checkout
       - restore_cache:
           keys: [frontend-build]
-      # - run:
-      #     command: |
-      #       echo export PATH=$PATH:`npm bin -g` >> ~/.bashrc
-      #       source ~/.bashrc
       - run:
           name: Build front-end
           command: |
