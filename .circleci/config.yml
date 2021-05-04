@@ -42,32 +42,32 @@ executors:
 #             fi
             
 jobs:
-  install-backend-dependencies:
-    executor: node
-    steps:
-      - checkout
-      - run:
-          name: npm install
-          working_directory: ./backend
-          command: ls -la && npm install
-      - persist_to_workspace:
-          root: .
-          paths:
-            - backend/node_modules
+  # install-backend-dependencies:
+  #   executor: node
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: npm install
+  #         working_directory: ./backend
+  #         command: ls -la && npm install
+  #     - persist_to_workspace:
+  #         root: .
+  #         paths:
+  #           - backend/node_modules
 
 
-  install-frontend-dependencies:
-    executor: node
-    steps:
-      - checkout
-      - run:
-          name: npm install
-          working_directory: ./frontend
-          command: ls -la && npm install
-      - persist_to_workspace:
-          root: .
-          paths:
-            - frontend/node_modules
+  # install-frontend-dependencies:
+  #   executor: node
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: npm install
+  #         working_directory: ./frontend
+  #         command: ls -la && npm install
+  #     - persist_to_workspace:
+  #         root: .
+  #         paths:
+  #           - frontend/node_modules
 
 
   build-frontend:
@@ -78,7 +78,12 @@ jobs:
       - restore_cache:
           keys: [frontend-build]
       - run:
-          name: Build front-end
+          name: install npm
+          command: |
+            cd frontend
+            ls -la && npm install
+      - run:
+          # name: Build front-end
           command: |
             cd frontend
             npm run build
@@ -94,8 +99,10 @@ jobs:
       - restore_cache:
           keys: [backend-build]
       - run:
+          name: install npm
           command: |
-            npm install --save-dev typescript
+            cd backend
+            ls -la && npm install
       - run:
           name: Back-end build
           command: |
@@ -306,16 +313,16 @@ jobs:
 workflows:
   default:
     jobs:
-      - install-backend-dependencies
-      - install-frontend-dependencies
+      # - install-backend-dependencies
+      # - install-frontend-dependencies
 
       - build-frontend:
-          requires:
-            - install-frontend-dependencies
+          # requires:
+          #   - install-frontend-dependencies
           
       - build-backend:
-          requires:
-            - install-backend-dependencies
+          # requires:
+          #   - install-backend-dependencies
       # - test-frontend:
       #     requires: [build-frontend]
       # - test-backend:
