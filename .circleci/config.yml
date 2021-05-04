@@ -62,8 +62,7 @@ jobs:
           keys: [backend-build]
       - run:
           command: |
-            echo export PATH=$PATH:`npm bin -g` >> ~/.bashrc
-            source ~/.bashrc
+            npm install --save-dev typescript
       - run:
           name: Back-end build
           command: |
