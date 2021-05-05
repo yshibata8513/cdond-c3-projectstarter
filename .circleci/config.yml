@@ -138,7 +138,8 @@ jobs:
           path: ./frontend/test_results
                 
   test-backend:
-    executor: node
+    docker:
+      - image: circleci/node:13.8.0
     steps:
       - checkout
       - attach_workspace:
@@ -158,21 +159,29 @@ jobs:
       - store_artifacts:
           path: ./backend/test_results
             
-#   scan-frontend:
-#     docker:
-#       # Docker image here
-#     steps:
-#       # Checkout code from git
-#       # Restore from cache
-#       # Your job code here
+  scan-frontend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: analyze frontend
+          working_directory: ./frontend
+          command: npm audit --audit-level=critical
 
-#   scan-backend:
-#     docker:
-#       # Docker image here
-#     steps:
-#       # Checkout code from git
-#       # Restore from cache
-#       # Your job code here
+  scan-backend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: analyze backend
+          working_directory: ./backend
+          command: npm audit --audit-level=critical
 
 #   deploy-infrastructure:
 #     docker:
@@ -357,10 +366,10 @@ workflows:
           requires: [build-frontend]
       - test-backend:
           requires: [build-backend]
-      # - scan-backend:
-      #     requires: [build-backend]
-      # - scan-frontend:
-      #     requires: [build-frontend]
+      - scan-backend:
+          requires: [build-backend]
+      - scan-frontend:
+          requires: [build-frontend]
       # - deploy-infrastructure:
       #     requires: [test-frontend, test-backend, scan-frontend, scan-backend]
       #     filters:
