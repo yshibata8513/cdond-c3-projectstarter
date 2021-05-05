@@ -186,12 +186,13 @@ jobs:
   deploy-infrastructure:
     docker:
       # Docker image here that supports AWS CLI
-        - image: circleci/aws-cli
+        - image: amazon/aws-cli
     steps:
       # Checkout code from git
       - checkout
       - run:
           name: Ensure back-end infrastructure exists
+          working_directory: .
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/backend.yml \
@@ -201,6 +202,7 @@ jobs:
          
       - run:
           name: Ensure front-end infrastructure exist
+          working_directory: .
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/frontend.yml \
