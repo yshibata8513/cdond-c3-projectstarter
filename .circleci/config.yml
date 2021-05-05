@@ -88,9 +88,9 @@ jobs:
             cd frontend
             npm run build
       - persist_to_workspace:
-        root: .
-        paths:
-          - frontend/node_modules
+          root: .
+          paths:
+            - frontend/node_modules
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
@@ -340,8 +340,8 @@ workflows:
       - build-backend
           # requires:
           #   - install-backend-dependencies
-      # - test-frontend:
-      #     requires: [build-frontend]
+      - test-frontend:
+          requires: [build-frontend]
       # - test-backend:
       #     requires: [build-backend]
       # - scan-backend:
