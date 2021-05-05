@@ -87,6 +87,10 @@ jobs:
           command: |
             cd frontend
             npm run build
+      - persist_to_workspace:
+        root: .
+        paths:
+          - frontend/node_modules
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
@@ -112,13 +116,26 @@ jobs:
           paths: [backend/node_modules]
           key: backend-build
 
-#   test-frontend:
-#     docker:
-#       # Docker image here
-#     steps:
-#       # Checkout code from git
-#       # Restore from cache
-#       # Your job code here
+  test-frontend:
+    executor: node
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Install junit coverage reporter
+          working_directory: ./frontend
+          command: npm install --save-dev jest-junit
+      - run:
+          name: Run tests with JUnit as reporter
+          working_directory: ./frontend
+          command: npm test -- --ci --runInBand --reporters=default --reporters=jest-junit && pwd && ls -la /tmp
+          environment:
+            JEST_JUNIT_OUTPUT_DIR: ./test_results
+      - store_test_results:
+          path: ./frontend/test_results
+      - store_artifacts:
+          path: ./frontend/test_results
                 
 #   test-backend:
 #     docker:
