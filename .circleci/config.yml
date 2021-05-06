@@ -232,9 +232,9 @@ jobs:
               --output text >> inventory.txt
 
       - persist_to_workspace:
-          root: ~/
+          root: .
           paths:
-            - project/.circleci/ansible/inventory.txt
+            - .circleci/ansible/inventory.txt
       # Here's where you will add some code to rollback on failure      
 
   configure-infrastructure:
@@ -261,7 +261,7 @@ jobs:
             pwd &&
             ls -la
             cat inventory
-            ansible-playbook -i inventory .circleci/ansible/configure-server.yaml
+            ansible-playbook -i inventory.txt .circleci/ansible/configure-server.yaml
       # Here's where you will add some code to rollback on failure      
 
   run-migrations:
@@ -343,12 +343,18 @@ jobs:
           at: .
       - run:
           name: Install dependencies
+          working_directory: /tmp
           command: |
-            # your code here
+            apk add --update ansible curl rsync openssh nodejs npm
+            ansible --version
+            pip install awscli
+            aws --version
       - run:
           name: Deploy backend
+          working_directory: ./.circleci/ansible
           command: |
-            # your code here
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-server.yaml -vv
       # Here's where you will add some code to rollback on failure  
 
 #   smoke-test:
