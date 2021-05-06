@@ -9,37 +9,39 @@ executors:
   aws:
     docker:
       - image: amazon/aws-cli
-# commands:
-#   destroy-environment:
-#     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
-#     parameters:
-#       # Add parameter here   
-#     steps:
-#       - run:
-#           name: Destroy environments
-#           when: on_fail
-#           command: |
-#             # Your code here
-#             exit 1
 
-#   revert-migrations:
-#     description: Revert the last migration if successfully run in the current workflow.
-#     parameters:
-#       # Add parameter here     
-#     steps:
-#       - run:
-#           name: Revert migrations
-#           # Add when this will run
-#           command: |
-#             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-#             SUCCESS = 1
-#             if(( $SUCCESS==1 )); 
-#             then
-#             #  cd ~/project/backend
-#             #  npm install
-#             #  Add revert code here. You can find this in the Getting Started section.
-#               exit 1
-#             fi
+commands:
+  destroy-environment:
+    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+    parameters:
+      # Add parameter here   
+    steps:
+      - run:
+          name: Destroy environments
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name udapeople-backend-yasaimasimasi85
+            aws s3 rm s3://udapeople-frontend-yasaimasimasi85 --recursive
+            aws cloudformation delete-stack --stack-name udapeople-frontend-yasaimasimasi85
+
+  revert-migrations:
+    description: Revert the last migration if successfully run in the current workflow.
+    parameters:
+      # Add parameter here     
+    steps:
+      - run:
+          name: Revert migrations
+          # Add when this will run
+          command: |
+            # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
+            SUCCESS = $(curl -H "token: db8ae497-ebf6-41e3-bc58-e0d32cbbe674" --request GET https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID})
+            if(( $SUCCESS == "true" ));  
+            then
+            #  cd ~/project/backend
+            #  npm install
+            #  Add revert code here. You can find this in the Getting Started section.
+            npm run migrations:revert
+            fi
             
 jobs:
   # install-backend-dependencies:
@@ -235,7 +237,9 @@ jobs:
           root: .
           paths:
             - .circleci/ansible/inventory.txt
-      # Here's where you will add some code to rollback on failure      
+      # Here's where you will add some code to rollback on failure     
+      - destroy_environment:
+          when: on_fail 
 
   configure-infrastructure:
     docker:
@@ -263,7 +267,9 @@ jobs:
             ls -la
             cat inventory.txt
             ansible-playbook -i inventory.txt configure-server.yaml
-      # Here's where you will add some code to rollback on failure      
+      # Here's where you will add some code to rollback on failure   
+      - destroy_environment:
+          when: on_fail    
 
   run-migrations:
     docker:
@@ -286,12 +292,14 @@ jobs:
             if grep -q "has been executed successfully" migration_status
             then
               echo "migration success"
-              curl -H "Content-Type: text/plain" -H "token: db8ae497-ebf6-41e3-bc58-e0d32cbbe674" --request PUT --data "success" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
+              curl -H "Content-Type: text/plain" -H "token: db8ae497-ebf6-41e3-bc58-e0d32cbbe674" --request PUT --data "true" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
             else
               echo "migration failure"
-              curl -H "Content-Type: text/plain" -H "token: db8ae497-ebf6-41e3-bc58-e0d32cbbe674" --request PUT --data "failure" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
+              curl -H "Content-Type: text/plain" -H "token: db8ae497-ebf6-41e3-bc58-e0d32cbbe674" --request PUT --data "false" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
             fi
-     # Here's where you will add some code to rollback on failure      
+     # Here's where you will add some code to rollback on failure   
+      - destroy_environment:
+          when: on_fail    
 
   deploy-frontend:
     docker:
@@ -328,6 +336,10 @@ jobs:
           paths:
             - frontend/dist
       # Here's where you will add some code to rollback on failure      
+      - destroy_environment:
+          when: on_fail
+      - revert_migrations:
+          when: on_fail
                     
   deploy-backend:
     docker:
@@ -357,6 +369,10 @@ jobs:
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-server.yaml -vv
       # Here's where you will add some code to rollback on failure  
+      - destroy_environment:
+          when: on_fail
+      - revert_migrations:
+          when: on_fail
 
   smoke-test:
     docker:
@@ -392,6 +408,10 @@ jobs:
             return 0
             fi
       # Here's where you will add some code to rollback on failure  
+      - destroy_environment:
+          when: on_fail
+      - revert_migrations:
+          when: on_fail
 
 #   cloudfront-update:
 #     docker:
@@ -460,10 +480,10 @@ workflows:
           requires: [configure-infrastructure]
       - deploy-frontend:
           requires: [run-migrations]
-      # - deploy-backend:
-      #     requires: [run-migrations]
-      # - smoke-test:
-      #     requires: [deploy-backend, deploy-frontend]
+      - deploy-backend:
+          requires: [run-migrations]
+      - smoke-test:
+          requires: [deploy-backend, deploy-frontend]
       # - cloudfront-update:
       #     requires: [smoke-test]
       # - cleanup:
