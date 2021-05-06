@@ -246,7 +246,7 @@ jobs:
       - checkout
       # Add ssh keys with fingerprint
       - add_ssh_keys:
-          fingerprints: "0d:e9:9f:46:07:79:02:49:aa:47:cf:fc:b1:5d:ea:08"
+          fingerprints: ["0d:e9:9f:46:07:79:02:49:aa:47:cf:fc:b1:5d:ea:08"]
       # attach workspace
       - attach_workspace:
           at: .
@@ -272,7 +272,7 @@ jobs:
       # Checkout code from git
       - checkout
       - attach_workspace:
-        at: .
+          at: .
       - run:
           name: Run migrations
           working_directory: ./backend
@@ -337,10 +337,10 @@ jobs:
       - checkout 
       # Add ssh keys with fingerprint
       - add_ssh_keys:
-          fingerprints: "0d:e9:9f:46:07:79:02:49:aa:47:cf:fc:b1:5d:ea:08"
+          fingerprints: ["0d:e9:9f:46:07:79:02:49:aa:47:cf:fc:b1:5d:ea:08"]
       # attach workspace
       - attach_workspace:
-        at: .
+          at: .
       - run:
           name: Install dependencies
           command: |
