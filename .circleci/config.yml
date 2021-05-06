@@ -257,11 +257,12 @@ jobs:
             ansible --version
       - run:
           name: Configure server
+          working_directory: .circleci/ansible
           command: |
             pwd &&
             ls -la
             cat inventory.txt
-            ansible-playbook -i inventory.txt .circleci/ansible/configure-server.yaml
+            ansible-playbook -i inventory.txt configure-server.yaml
       # Here's where you will add some code to rollback on failure      
 
   run-migrations:
@@ -384,7 +385,12 @@ jobs:
           name: Frontend smoke test.
           command: |
             FRONTEND_URL="http://udapeople-yasaimasimasi85.s3-website-us-west-2.amazonaws.com"
-            curl "FRONTEND_URL"
+            if curl -s ${FRONTEND_URL} | grep "Welcome"
+            then
+            return 1
+            else
+            return 0
+            fi
       # Here's where you will add some code to rollback on failure  
 
 #   cloudfront-update:
