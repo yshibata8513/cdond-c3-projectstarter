@@ -202,6 +202,16 @@ jobs:
               --stack-name udapeople-backend-yasaimasimasi85 \
               --parameter-overrides ID=yasaimasimasi85 \
               --tags project=udapeople-backend-yasaimasimasi85
+
+      - run:
+          name: Save backend URL in memstash
+          command: |
+            BACKEND_IP=$(aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filters "Name=tag:project,Values=udapeople-backend-yasaimasimasi85" \
+              --output text)
+
+            curl -H "Content-Type: text/plain" -H "token: fe872203-d6b5-4e9a-91d8-a3f107aacdbe" --request PUT --data "BACKEND_IP" https://api.memstash.io/values/BACKEND_IP
          
       - run:
           name: Ensure front-end infrastructure exist
@@ -230,7 +240,7 @@ jobs:
   configure-infrastructure:
     docker:
       # Docker image here that supports Ansible
-      image: python:3.9.0-alpine
+      - image: python:3.9.0-alpine
     steps:
       # Checkout code from git
       - checkout
@@ -282,43 +292,64 @@ jobs:
             fi
      # Here's where you will add some code to rollback on failure      
 
-#   deploy-frontend:
-#     docker:
-#       # Docker image here that supports AWS CLI
-#     steps:
-#       # Checkout code from git
-#       - run:
-#           name: Install dependencies
-#           command: |
-#             # your code here
-#       - run:
-#           name: Get backend url
-#           command: |
-#             # your code here
-#             export API_URL="http://${BACKEND_IP}:3030"
-#             echo "${API_URL}"
-#       - run:
-#           name: Deploy frontend objects
-#           command: |
-#             # your code here
-#       # Here's where you will add some code to rollback on failure      
+  deploy-frontend:
+    docker:
+      # Docker image here that supports AWS CLI
+      - image: circleci/node:13.8.0
+    steps:
+      # Checkout code from git
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            sudo apt-get update && sudo apt-get install -yy less
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+      - run:
+          name: Get backend url
+          working_directory: ./frontend
+          command: |
+            export BACKEND_IP=$(curl -H "token: fe872203-d6b5-4e9a-91d8-a3f107aacdbe" --request GET https://api.memstash.io/values/BACKEND_IP)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+            npm run build
+
+      - run:
+          name: Deploy frontend objects
+          working_directory: ./frontend
+          command: |
+            # your code here
+            aws s3 cp ./dist "s3://udapeople-yasaimasimasi85" --recursive
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - frontend/dist
+      # Here's where you will add some code to rollback on failure      
                     
-#   deploy-backend:
-#     docker:
-#       # Docker image here that supports Ansible
-#     steps:
-#       # Checkout code from git
-#       # Add ssh keys with fingerprint
-#       # attach workspace
-#       - run:
-#           name: Install dependencies
-#           command: |
-#             # your code here
-#       - run:
-#           name: Deploy backend
-#           command: |
-#             # your code here
-#       # Here's where you will add some code to rollback on failure  
+  deploy-backend:
+    docker:
+      # Docker image here that supports Ansible
+      - image: python:3.9.0-alpine
+    steps:
+      # Checkout code from git
+      - checkout 
+      # Add ssh keys with fingerprint
+      - add_ssh_keys:
+          fingerprints: "0d:e9:9f:46:07:79:02:49:aa:47:cf:fc:b1:5d:ea:08"
+      # attach workspace
+      - attach_workspace:
+        at: .
+      - run:
+          name: Install dependencies
+          command: |
+            # your code here
+      - run:
+          name: Deploy backend
+          command: |
+            # your code here
+      # Here's where you will add some code to rollback on failure  
 
 #   smoke-test:
 #     docker:
@@ -408,8 +439,8 @@ workflows:
           requires: [deploy-infrastructure]
       - run-migrations:
           requires: [configure-infrastructure]
-      # - deploy-frontend:
-      #     requires: [run-migrations]
+      - deploy-frontend:
+          requires: [run-migrations]
       # - deploy-backend:
       #     requires: [run-migrations]
       # - smoke-test:
