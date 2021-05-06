@@ -227,42 +227,60 @@ jobs:
             - project/.circleci/ansible/inventory.txt
       # Here's where you will add some code to rollback on failure      
 
-  # configure-infrastructure:
-  #   docker:
-  #     # Docker image here that supports Ansible
-  #     image: python:3.9.0-alpine
-  #   steps:
-  #     # Checkout code from git
-  #     # Add ssh keys with fingerprint
-  #     # attach workspace
-  #     - run:
-  #         name: Install dependencies
-  #         command: |
-  #           # Your code here
-  #           exit 1
-  #     - run:
-  #         name: Configure server
-  #         command: |
-  #           # Your code here
-  #           exit 1
-  #     # Here's where you will add some code to rollback on failure      
+  configure-infrastructure:
+    docker:
+      # Docker image here that supports Ansible
+      image: python:3.9.0-alpine
+    steps:
+      # Checkout code from git
+      - checkout
+      # Add ssh keys with fingerprint
+      - add_ssh_keys:
+          fingerprints: "0d:e9:9f:46:07:79:02:49:aa:47:cf:fc:b1:5d:ea:08"
+      # attach workspace
+      - attach_workspace
+          at: .
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible
+            ansible --version
+      - run:
+          name: Configure server
+          command: |
+            pwd &&
+            ls -la
+            cat inventory
+            ansible-playbook -i inventory .circleci/ansible/configure-server.yaml
+      # Here's where you will add some code to rollback on failure      
 
-#   run-migrations:
-#     docker:
-#       # Docker image here that supports NodeJS
-#     steps:
-#       # Checkout code from git
-#       - run:
-#           name: Run migrations
-#           command: |
-#             # Your code here
-#             exit 1
-#       - run:
-#           name: Send migration results to memstash
-#           command: |
-#             # Your code here
-#             exit 1
-#      # Here's where you will add some code to rollback on failure      
+  run-migrations:
+    docker:
+      # Docker image here that supports NodeJS
+      - image: circleci/node:13.8.0
+    steps:
+      # Checkout code from git
+      - checkout
+      - attach_workspace:
+        at: .
+      - run:
+          name: Run migrations
+          working_directory: ./backend
+          command: |
+            npm run migrations > migration_status
+      - run:
+          name: Send migration results to memstash
+          working_directory: ./backend
+          command: |
+            if grep -q "has been executed successfully" migration_status
+            then
+              echo "migration success"
+              curl -H "Content-Type: text/plain" -H "token: db8ae497-ebf6-41e3-bc58-e0d32cbbe674" --request PUT --data "success" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
+            else
+              echo "migration failure"
+              curl -H "Content-Type: text/plain" -H "token: db8ae497-ebf6-41e3-bc58-e0d32cbbe674" --request PUT --data "failure" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
+            fi
+     # Here's where you will add some code to rollback on failure      
 
 #   deploy-frontend:
 #     docker:
