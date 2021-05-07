@@ -40,6 +40,63 @@ commands:
             fi
             
 jobs:
+
+  install-backend-dependencies:
+    executor: node
+    steps:
+      - checkout
+      - run:
+          name: npm install
+          working_directory: ./backend
+          command: ls -la && npm install
+      - persist_to_workspace:
+          root: .
+          paths:
+            - backend/node_modules
+
+
+  install-frontend-dependencies:
+   executor: node
+   steps:
+      - checkout
+      - run:
+          name: npm install
+          working_directory: ./frontend
+          command: ls -la && npm install
+      - persist_to_workspace:
+          root: .
+          paths:
+            - frontend/node_modules
+
+
+  build-backend:
+    executor: node
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: npm run build
+          working_directory: ./backend
+          command: npm run build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - backend/dist
+
+
+  build-frontend:
+    executor: node
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: npm run build
+          working_directory: ./frontend
+          command: npm run build
+
+
   # install-backend-dependencies:
   #   executor: node
   #   steps:
@@ -68,55 +125,55 @@ jobs:
   #           - frontend/node_modules
 
 
-  build-frontend:
-    docker:
-      - image: circleci/node:13.8.0
-    steps:
-      - checkout
-      - restore_cache:
-          keys: [frontend-build]
-      - run:
-          name: install npm
-          command: |
-            cd frontend
-            ls -la && npm install
-      - run:
-          name: Build front-end
-          command: |
-            cd frontend
-            npm run build
-      - persist_to_workspace:
-          root: .
-          paths:
-            - frontend/node_modules
-      - save_cache:
-          paths: [frontend/node_modules]
-          key: frontend-build
+  # build-frontend:
+  #   docker:
+  #     - image: circleci/node:13.8.0
+  #   steps:
+  #     - checkout
+  #     # - restore_cache:
+  #     #     keys: [frontend-build]
+  #     - run:
+  #         name: install npm
+  #         command: |
+  #           cd frontend
+  #           ls -la && npm install
+  #     - run:
+  #         name: Build front-end
+  #         command: |
+  #           cd frontend
+  #           npm run build
+  #     - persist_to_workspace:
+  #         root: .
+  #         paths:
+  #           - frontend/node_modules
+  #     - save_cache:
+  #         paths: [frontend/node_modules]
+  #         key: frontend-build
 
-  build-backend:
-    docker:
-      - image: circleci/node:13.8.0
-    steps:
-      - checkout
-      - restore_cache:
-          keys: [backend-build]
-      - run:
-          name: install npm
-          command: |
-            cd backend
-            ls -la && npm install
-      - run:
-          name: Back-end build
-          command: |
-            cd backend
-            npm run build
-      - persist_to_workspace:
-          root: .
-          paths:
-            - backend/node_modules
-      - save_cache:
-          paths: [backend/node_modules]
-          key: backend-build
+  # build-backend:
+  #   docker:
+  #     - image: circleci/node:13.8.0
+  #   steps:
+  #     - checkout
+  #     # - restore_cache:
+  #     #     keys: [backend-build]
+  #     - run:
+  #         name: install npm
+  #         command: |
+  #           cd backend
+  #           ls -la && npm install
+  #     - run:
+  #         name: Back-end build
+  #         command: |
+  #           cd backend
+  #           npm run build
+  #     - persist_to_workspace:
+  #         root: .
+  #         paths:
+  #           - backend/node_modules
+  #     - save_cache:
+  #         paths: [backend/node_modules]
+  #         key: backend-build
 
   test-frontend:
     executor: node
@@ -511,16 +568,16 @@ jobs:
 workflows:
   default:
     jobs:
-      # - install-backend-dependencies
-      # - install-frontend-dependencies
+      - install-backend-dependencies
+      - install-frontend-dependencies
 
       - build-frontend
-          # requires:
-          #   - install-frontend-dependencies
+          requires:
+            - install-frontend-dependencies
           
       - build-backend
-          # requires:
-          #   - install-backend-dependencies
+          requires:
+            - install-backend-dependencies
       - test-frontend:
           requires: [build-frontend]
       - test-backend:
