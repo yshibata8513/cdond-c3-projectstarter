@@ -1,13 +1,21 @@
-# - name: Creates directory
-#   file:
-#     path: ~/web
-#     state: directory
+- name: mkdir backend
+  become: true
+  command: mkdir -p /home/ubuntu/udapeople
 
-# - name: Copy index test page
-#   template:
-#     src: "files/index.js"
-#     dest: "~/web/index.js"
+- name: Copy files from backend
+  become: true
+  synchronize:
+    src: /home/backend/dist
+    dest: /home/ubuntu/udapeople
 
-# - name: Executing node
-#   shell: |
-#     pm2 start ~/web/index.js -f
+- name: Copy files from backend
+  become: true
+  synchronize:
+    src: /home/backend/node_modules
+    dest: /home/ubuntu/udapeople
+
+  - name: "start server"
+    become: true
+    command: pm2 start -f ./main.js
+    args:
+      chdir: /home/ubuntu/udapeople/dist

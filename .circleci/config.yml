@@ -37,8 +37,8 @@ commands:
             SUCCESS = $(curl -H "token: db8ae497-ebf6-41e3-bc58-e0d32cbbe674" --request GET https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID})
             if(( $SUCCESS == "true" ));  
             then
-            #  cd ~/project/backend
-            #  npm install
+            # cd ~/project/backend
+            # npm install
             #  Add revert code here. You can find this in the Getting Started section.
             npm run migrations:revert
             fi
@@ -230,7 +230,7 @@ jobs:
           command: |
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --filters "Name=tag:project,Values=udapeople-frontend-yasaimasimasi85" \
+              --filters "Name=tag:project,Values=udapeople-backend-yasaimasimasi85" \
               --output text >> inventory.txt
 
       - persist_to_workspace:
@@ -280,6 +280,12 @@ jobs:
       - checkout
       - attach_workspace:
           at: .
+      - run:
+          name: npm install
+          working_directory: ./backend
+            sudo npm install
+            npm audit fix --audit-level=critical --force
+            npm run build
       - run:
           name: Run migrations
           working_directory: ./backend
@@ -413,20 +419,39 @@ jobs:
       # - revert-migrations:
       #     when: on_fail
 
-#   cloudfront-update:
-#     docker:
-#       # Docker image here that supports AWS CLI
-#     steps:
-#       # Checkout code from git
-#       - run:
-#           name: Install dependencies
-#           command: |
-#             # your code here
-#       - run:
-#           name: Update cloudfront distribution
-#           command: |
-#             # your code here
-#       # Here's where you will add some code to rollback on failure  
+  cloudfront-update:
+    docker:
+      # Docker image here that supports AWS CLI
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            yum install -y tar gzip curl
+            curl -sL https://rpm.nodesource.com/setup_10.x | bash -
+            yum install -y nodejs
+      - run:
+          name: Store old WorkflowID in memstash for cleanup phase
+          working_directory: ./.circleci/files
+          command: |
+            WorkflowID=$(aws cloudformation \
+              list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+              --no-paginate --output text)
+            curl -H "Content-Type: text/plain" -H "token: 1513db3b-15be-4750-bae6-3a8d32dd6de2" --request PUT --data "$WorkflowID" https://api.memstash.io/values/WorkflowID
+      - run:
+          name: Update cloudfront distribution
+          working_directory: ./.circleci/files
+          command: |
+            aws cloudformation deploy \
+              --template-file cloudfront.yaml \
+              --stack-name udapeople-cloudfront-production \
+              --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
+              --tags project=udapeople
+      - revert_migrations:
+          id: ${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
+      # Here's where you will add some code to rollback on failure  
 
 # cleanup:
 #     docker:
