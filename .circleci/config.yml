@@ -267,22 +267,57 @@ jobs:
       # - destroy-environment:
       #     when: on_fail    
 
+  # run-migrations:
+  #   docker:
+  #     # Docker image here that supports NodeJS
+  #     - image: circleci/node:13.8.0
+  #   steps:
+  #     # Checkout code from git
+  #     - checkout
+  #     - attach_workspace:
+  #         at: .
+  #     - run:
+  #         name: npm install
+  #         working_directory: ./backend
+  #         command: |
+  #           sudo npm install
+  #           npm audit fix --audit-level=critical --force
+  #           npm run build
+  #     - run:
+  #         name: Run migrations
+  #         working_directory: ./backend
+  #         command: |
+  #           npm run migrations > migration_status
+  #     - run:
+  #         name: Send migration results to memstash
+  #         working_directory: ./backend
+  #         command: |
+  #           if grep -q "has been executed successfully" migration_status
+  #           then
+  #             echo "migration success"
+  #             curl -H "Content-Type: text/plain" -H "token: db8ae497-ebf6-41e3-bc58-e0d32cbbe674" --request PUT --data "true" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
+  #           else
+  #             echo "migration failure"
+  #             curl -H "Content-Type: text/plain" -H "token: db8ae497-ebf6-41e3-bc58-e0d32cbbe674" --request PUT --data "false" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
+  #           fi
+  #    # Here's where you will add some code to rollback on failure   
+  #     # - destroy-environment:
+  #     #     when: on_fail    
+
   run-migrations:
-    docker:
-      # Docker image here that supports NodeJS
-      - image: circleci/node:13.8.0
+    executor: node
     steps:
-      # Checkout code from git
       - checkout
       - attach_workspace:
           at: .
       - run:
-          name: npm install
-          working_directory: ./backend
+          name: Install AWS CLI dependencies
+          working_directory: /tmp
           command: |
-            sudo npm install
-            npm audit fix --audit-level=critical --force
-            npm run build
+            sudo apt-get update && sudo apt-get install -yy less
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
       - run:
           name: Run migrations
           working_directory: ./backend
@@ -294,15 +329,14 @@ jobs:
           command: |
             if grep -q "has been executed successfully" migration_status
             then
-              echo "migration success"
-              curl -H "Content-Type: text/plain" -H "token: db8ae497-ebf6-41e3-bc58-e0d32cbbe674" --request PUT --data "true" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
+              echo "DB migration was successful, will update memstash..."
+              curl -H "Content-Type: text/plain" -H "token: db8ae497-ebf6-41e3-bc58-e0d32cbbe674" --request PUT --data "success" https://api.memstash.io/values/DB_MIGRATION_${CIRCLE_WORKFLOW_ID:0:7}
             else
-              echo "migration failure"
-              curl -H "Content-Type: text/plain" -H "token: db8ae497-ebf6-41e3-bc58-e0d32cbbe674" --request PUT --data "false" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
+              echo "DB migration failed, please verify setup! Probably the database already exists. Verify setup!"
+              curl -H "Content-Type: text/plain" -H "token: db8ae497-ebf6-41e3-bc58-e0d32cbbe674" --request PUT --data "failure" https://api.memstash.io/values/DB_MIGRATION_${CIRCLE_WORKFLOW_ID:0:7}
             fi
-     # Here's where you will add some code to rollback on failure   
-      # - destroy-environment:
-      #     when: on_fail    
+            echo "WorkflowID=yasaimasimasi85"
+
 
   deploy-frontend:
     docker:
