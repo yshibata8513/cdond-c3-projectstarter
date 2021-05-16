@@ -17,13 +17,27 @@
     src: "{{ inventory_dir }}/../../backend/node_modules"
     dest: /home/ubuntu/udapeople
 
-- name: "install pm2"
+- name: install pm2
   become: true
-  command: 
-    - apt update
-    - apt install nodejs
-    - apt install npm
-    - npm install pm2 -g
+  command: apt update
+  args:
+    chdir: /home/ubuntu/udapeople/dist
+
+- name: install pm2
+  become: true
+  command: apt install nodejs
+  args:
+    chdir: /home/ubuntu/udapeople/dist
+
+- name: install pm2
+  become: true
+  command: apt install npm
+  args:
+    chdir: /home/ubuntu/udapeople/dist
+
+- name: install pm2
+  become: true
+  command: npm install pm2 -g
   args:
     chdir: /home/ubuntu/udapeople/dist
 
