@@ -268,7 +268,7 @@ jobs:
               --filters "Name=tag:project,Values=udapeople-backend-yasaimasimasi85" \
               --output text)
 
-            curl -H "Content-Type: text/plain" -H "token: fe872203-d6b5-4e9a-91d8-a3f107aacdbe" --request PUT --data "BACKEND_IP" https://api.memstash.io/values/BACKEND_IP
+            curl -H "Content-Type: text/plain" -H "token: fe872203-d6b5-4e9a-91d8-a3f107aacdbe" --request PUT --data BACKEND_IP https://api.memstash.io/values/BACKEND_IP
          
       - run:
           name: Ensure front-end infrastructure exist
@@ -418,6 +418,7 @@ jobs:
             export BACKEND_IP=$(curl -H "token: fe872203-d6b5-4e9a-91d8-a3f107aacdbe" --request GET https://api.memstash.io/values/BACKEND_IP)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
+            npm install
             npm run build
 
       - run:
@@ -525,10 +526,10 @@ jobs:
           name: Store old WorkflowID in memstash for cleanup phase
           working_directory: ./.circleci/files
           command: |
-            export OldWorkflowID=$(aws cloudformation \
+            OldWorkflowID=$(aws cloudformation \
                 list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
                 --no-paginate --output text)
-            curl -H "Content-Type: text/plain" -H "token: fe872203-d6b5-4e9a-91d8-a3f107aacdbe" --request PUT --data "$OldWorkflowID" https://api.memstash.io/values/WorkflowID
+            curl -H "Content-Type: text/plain" -H "token: fe872203-d6b5-4e9a-91d8-a3f107aacdbe" --request PUT --data OldWorkflowID https://api.memstash.io/values/WorkflowID
       - run:
           name: Update cloudfront distribution
           working_directory: ./.circleci/files
