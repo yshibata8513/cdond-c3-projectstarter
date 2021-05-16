@@ -7,13 +7,14 @@
 - name: Copy files from backend
   become: true
   synchronize:
-    src: /home/backend/dist
+    # src: /project/backend/dist
+    src: "{{ inventory_dir }}/../../backend/dist"
     dest: /home/ubuntu/udapeople
 
 - name: Copy files from backend
   become: true
   synchronize:
-    src: /home/backend/node_modules
+    src: "{{ inventory_dir }}/../../backend/node_modules"
     dest: /home/ubuntu/udapeople
 
 - name: "start server"
