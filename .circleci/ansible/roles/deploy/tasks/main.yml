@@ -25,13 +25,13 @@
 
 - name: install pm2
   become: true
-  command: apt install nodejs
+  command: apt install -y nodejs
   args:
     chdir: /home/ubuntu/udapeople/dist
 
 - name: install pm2
   become: true
-  command: apt install npm
+  command: apt install -y npm
   args:
     chdir: /home/ubuntu/udapeople/dist
 
